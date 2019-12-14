@@ -70,21 +70,24 @@ namespace Prog4{
 		//int n_platforms;
 		std::vector<Module*> mods;
 		//Module** mods;
-		std::vector < Cordinate*> enemies; //sensor
-		std::vector < Cordinate*> barriers; //sensor
-		std::vector < Cordinate*> platforms; //sensor
+		std::vector < Cordinate> enemies; //sensor
+		std::vector < Cordinate> barriers; //sensor
+		std::vector < Cordinate> platforms; //sensor
 		friend Space;
 		friend Network;
 		friend Sensor;
+		friend Weapon;
 	public:
-		int get_pltype() { return pltype; }
-		Cordinate get_module_is(int mt, int les, int lec, int n, int nms, int r);
-		Module* return_module(int i) { return mods[i]; }
+		virtual int get_pltype() { return pltype; }
+		virtual Cordinate get_module_is(int mt, int les, int lec, int n, int nms, int r);
+		virtual int get_network_is();
+		virtual Module* return_module(int i) { return mods[i]; }
 		//void change_discription(char*);
+		virtual void put_objects_info();
 		Platform();
 		Platform(Cordinate, int les, int ns);
-		int add_module(int mt, int les, int lec, bool p, int n, int nms, int r);
-		int delete_module(int t, int les, int lec, int n, int nms, int r);
+		virtual int add_module(int mt, int les, int lec, bool p, int n, int nms, int r);
+		virtual int delete_module(int t, int les, int lec, int n, int nms, int r);
 		virtual ~Platform() { ; }
 	};
 	class Enemy : public Cell {  // type == 3
@@ -125,11 +128,11 @@ namespace Prog4{
 		void Power_off() { power = false; }
 	public:
 		Module();
-		int get_mtype() { return mtype; }
-		int get_n_slots_take() {return n_slots_take; }
-		int get_level_energy_supply() { return level_energy_supply; }
-		int get_level_energy_cons() { return level_energy_cons; }
-		int get_R() { return R; }
+		virtual int get_mtype() { return mtype; }
+		virtual int get_n_slots_take() {return n_slots_take; }
+		virtual int get_level_energy_supply() { return level_energy_supply; }
+		virtual int get_level_energy_cons() { return level_energy_cons; }
+		virtual int get_R() { return R; }
 		Module(int les, int lec, bool p, int nm, int r);
 		friend Space;
 		virtual ~Module() { ; }
@@ -147,7 +150,10 @@ namespace Prog4{
 		Network(int les, int lec, bool p, int n, int nms, int r, int i);
 		int get_n_max_session() { return n_max_session; }
 		void get_Partners(Space&, Platform&);
+		void put_all_Partners();
+		void put_active_Partners();
 		std::vector<Platform*> give_Partners();
+		void set_Partners(std::vector<Platform*> a) { active = a; }
 		void set_Connection(Cordinate, Cordinate);
 		void ask_Partners(Cordinate, Space&, Platform&);
 		void take_info(Platform&);
@@ -169,7 +175,7 @@ namespace Prog4{
 	public:
 		Weapon();
 		Weapon(int, int les, int lec, bool p, int n, int r, int i);
-		void Kill(Cordinate, Space&);
+		void Kill(Platform&, Space&);
 		void inCharge() { Power_off(); }
 		void outCharge() { Power_on(); }
 		friend Space;
@@ -178,7 +184,10 @@ namespace Prog4{
 	extern const char* msgs_cell[];
 	extern const char* msgs_platform[];
 	extern const char* msgs_enemy[];
-	extern const int NMsgs1, NMsgs_cell, NMsgs_barrier, NMsgs_platform, NMsgs_enemy;
+	extern const char* msgs_network[];
+	extern const char* msgs_sensor[];
+	extern const char* msgs_weapon[];
+	extern const int NMsgs1, NMsgs_cell, NMsgs_barrier, NMsgs_platform, NMsgs_enemy, NMsgs_network, NMsgs_sensor, NMsgs_weapon;
 	int dialog(const char* msgs[], int);
 	int getNum(int& a);
 	Cordinate input_c();
