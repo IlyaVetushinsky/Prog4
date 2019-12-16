@@ -6,16 +6,11 @@ namespace Prog4 {
 	const int NMsgs1 = sizeof(msgs1) / sizeof(msgs1[0]);
 	const char* msgs_cell[] = { "0. Quit or select other object", "1. Print type", "2. Print cordinate"};
 	const int NMsgs_cell = sizeof(msgs_cell) / sizeof(msgs_cell[0]);
-	const char* msgs_platform[] = { "0. Quit or select other object", "1. Print type of cell", "2. Print cordinate", "3. Print type of platform", "4. Add module" ,"5. Find module", "6. Delete module", "7. Select module", "8. Move (only for mobile)" };
+	const char* msgs_platform[] = { "0. Quit or select other object", "1. Print type of cell", "2. Print cordinate", "3. Print type of platform", "4. Add module" ,"5. Find module", "6. Delete module", "7. Move (only for mobile)", "8. Print modules" };
 	const int NMsgs_platform = sizeof(msgs_platform) / sizeof(msgs_platform[0]);
-	const char* msgs_enemy[] = { "0. Quit or select other object", "1. Print type", "2. Print cordinate", "3. Move", "4. Destroy" };
+	const char* msgs_enemy[] = { "0. Quit or select other object", "1. Print type", "2. Print cordinate", "3. Move"};
 	const int NMsgs_enemy = sizeof(msgs_enemy) / sizeof(msgs_enemy[0]);
-	  const char* msgs_network[] = { "0. Quit or select other module", "1. Get Partners", "2. Ask Partners" , "3. Take info" };
-	const int NMsgs_network = sizeof(msgs_network) / sizeof(msgs_network[0]);
-    	const char* msgs_sensor[] = { "0. Quit or select other module", "1. Scan space" };
-	const int NMsgs_sensor = sizeof(msgs_sensor) / sizeof(msgs_sensor[0]);
-	   const char* msgs_weapon[] = { "0. Quit or select other module", "1. Kill", "2. To charge", "3. From charge"};
-	const int NMsgs_weapon = sizeof(msgs_weapon) / sizeof(msgs_weapon[0]);
+
 
 	int getNum(int& a)
 	{
@@ -208,7 +203,7 @@ namespace Prog4 {
 		if (type == 3)
 			field[c.x][c.y] = new Mobile_Platform(c, les, ns, v);
 		if (type == 4)
-			field[c.x][c.y] = new Enemy(c);
+			field[c.x][c.y] = new Enemy(c, v);
 		return 0;
 	}
 
@@ -242,13 +237,13 @@ namespace Prog4 {
 	}
 
 	Space::~Space() {
-		for (int i = 0; i < Size.x; i++) {
-			for (int j = 0; j < Size.y; j++) {
-				delete[] field[i][j];
-			}
-			delete[] field[i];
-		}
-		delete[] field;
+		//for (int i = 0; i < Size.x; i++) {
+		//	for (int j = 0; j < Size.y; j++) {
+		//		delete[] field[i][j];
+		//	}
+		//	delete[] field[i];
+		//}
+		//delete[] field;
 	}
 
 	Cell::Cell() {
@@ -344,8 +339,14 @@ namespace Prog4 {
 		//	}
 		//	delete mods2;
 		//}
+		for (int i = 0; i < mods.size(); i++) {
+			if (mods[i]->get_mtype() == mt) {
+				std::cout << "This type of module is already installed on the platform. Delete it using the menu if you want to add a new one \n";
+				return 0;
+			}
+		}
 		if (n_slots_taked + n > n_slots) {
-			std::cout << "All slots are busy /n";
+			std::cout << "All slots are busy \n";
 			return 0;
 		}
 		if (mt == 1) {
@@ -403,7 +404,7 @@ namespace Prog4 {
 		std::cout << std::endl;
 		std::cout << "Platforms: ";
 		for (int i = 0; i < platforms.size(); i++) {
-			std::cout << platforms[i].x << ", " << platforms[i].y << std::endl;
+			std::cout << platforms[i]->C.x << ", " << platforms[i]->C.y << std::endl;
 		}
 		std::cout << std::endl;
 		std::cout << "Barriers: ";
@@ -411,6 +412,32 @@ namespace Prog4 {
 			std::cout << barriers[i].x << ", " << barriers[i].y << std::endl;
 		}
 		std::cout << std::endl;
+	}
+
+	Module* Platform::return_module(int mt, int) {
+		for (int i = 0; i < mods.size(); i++) {
+			if (mods[i]->get_mtype() == mt)
+				return mods[i];
+		}
+		return nullptr;
+	}
+
+	Cordinate Platform::get_enemy_is() {
+		if(enemies.size() == 0)
+			return { -1,-1 };
+		else
+			return enemies[enemies.size() - 1];
+	}
+
+
+	int Platform::find_stp_in_active() {
+		int k = 0;
+		for (int i = 0; i < platforms.size(); i++) {
+			if (platforms[i]->get_pltype() == 1) {
+				k++;
+			}
+		}
+		return k;
 	}
 
 		//if (mods != nullptr) {
@@ -444,9 +471,15 @@ namespace Prog4 {
 		//	n_mods--;
 		//}
 
-	Enemy::Enemy() :Cell({ 0,0 }, 3) {}
+	Enemy::Enemy() :Cell({ 0,0 }, 3) {
+		V = 1;
+		n = 0;
+	}
 
-	Enemy::Enemy(Cordinate c) :Cell(c, 3) {}
+	Enemy::Enemy(Cordinate c, int v) :Cell(c, 3) {
+		V = v;
+		n = 0;
+	}
 
 	Enemy* Enemy::move(int k, Space &S) {
 		Enemy* enemy = nullptr;
@@ -485,6 +518,18 @@ namespace Prog4 {
 		return enemy;
 	}
 
+	void Enemy::move_alg(Space& S) {
+		int a = rand() % 4;
+		if (a == 0)
+			move(8, S);
+		if (a == 1)
+			move(4, S);
+		if (a == 2)
+			move(2, S);
+		if (a == 3)
+			move(6, S);
+	}
+
 	Static_Platform::Static_Platform() :Platform({0,0}, 100, 10) {
 		pltype = 1;
 		strcpy(description, "Empty static platform");
@@ -507,12 +552,14 @@ namespace Prog4 {
 	}
 
 	Mobile_Platform::Mobile_Platform() :Platform({ 0,0 }, 100, 10) {
+		n = 0;
 		pltype = 2;
 		V = 1;
 		strcpy(description, "Empty mobile platform");
 	}
 
 	Mobile_Platform::Mobile_Platform(Cordinate c, int les, int ns, int v) : Platform(c, les, ns) {
+		n = 0;
 		pltype = 2;
 		V = v;
 		strcpy(description, "Empty mobile platform");
@@ -522,7 +569,7 @@ namespace Prog4 {
 		platforms = nullptr;*/
 	}
 
-	Mobile_Platform* Mobile_Platform::Move(int k, Space &S) {
+	int Mobile_Platform::Move(int k, Space &S) {
 		Mobile_Platform* mp = nullptr;
 		if (k == 6 && C.x < S.Size.x - 1)
 			if (S.field[C.x + 1][C.y]->get_type() == 0) {
@@ -531,6 +578,7 @@ namespace Prog4 {
 				S.field[C.x][C.y] = new Cell(C, 0);
 				mp = dynamic_cast<Mobile_Platform*>(S.field[C.x + 1][C.y]);
 				C.x++;
+				return 1;
 			}
 		if (k == 8 && C.y < S.Size.y - 1)
 			if (S.field[C.x][C.y + 1]->get_type() == 0) {
@@ -539,6 +587,7 @@ namespace Prog4 {
 				mp = dynamic_cast<Mobile_Platform*>(S.field[C.x][C.y + 1]);
 				S.field[C.x][C.y] = new Cell(C, 0);
 				C.y++;
+				return 1;
 			}
 		if (k == 4 && C.x > 0)
 			if (S.field[C.x - 1][C.y]->get_type() == 0) {
@@ -547,6 +596,7 @@ namespace Prog4 {
 				S.field[C.x][C.y] = new Cell(C, 0);
 				mp = dynamic_cast<Mobile_Platform*>(S.field[C.x - 1][C.y]);
 				C.x--;
+				return 1;
 			}
 		if (k == 2 && C.y > 0)
 			if (S.field[C.x][C.y - 1]->get_type() == 0) {
@@ -555,8 +605,31 @@ namespace Prog4 {
 				S.field[C.x][C.y] = new Cell(C, 0);
 				mp = dynamic_cast<Mobile_Platform*>(S.field[C.x][C.y - 1]);
 				C.y--;
+				return 1;
 			}
-		return mp;
+		return 0;
+	}
+
+	void Mobile_Platform::go_to(Cordinate c, Space& S) {
+		Network* net = dynamic_cast<Network*>(return_module(1, 0));
+		Cordinate cc;
+		int t = net->return_max_able_stp(*this, cc);
+		Platform* stpl = dynamic_cast<Platform*>(S.return_object(cc));
+		int r = return_module(1, 0)->get_R();
+		if (r < stpl->return_module(1, 0)->get_R())
+			r = stpl->return_module(1, 0)->get_R();
+		if (C.x - c.x > 0 && r - sqrt((get_Cordinate().x - 1 - cc.x) * (get_Cordinate().x - 1 - cc.x) + (get_Cordinate().y - cc.y) * (get_Cordinate().y - cc.y)) > Sq + 1) {
+			Move(4, S);
+		}
+		if (C.x - c.x < 0 && r - sqrt((get_Cordinate().x + 1 - cc.x) * (get_Cordinate().x + 1 - cc.x) + (get_Cordinate().y - cc.y) * (get_Cordinate().y - cc.y)) > Sq + 1) {
+			Move(6, S);
+		}
+		if (C.y - c.y > 0 && r - sqrt((get_Cordinate().x - cc.x) * (get_Cordinate().x - cc.x) + (get_Cordinate().y - cc.y - 1) * (get_Cordinate().y - cc.y - 1)) > Sq + 1) {
+			Move(2, S);
+		}
+		if (C.y - c.y < 0 && r - sqrt((get_Cordinate().x - cc.x) * (get_Cordinate().x - cc.x) + (get_Cordinate().y - cc.y + 1) * (get_Cordinate().y - cc.y + 1)) > Sq + 1) {
+			Move(8, S);
+		}
 	}
 
 	Mobile_Platform::~Mobile_Platform() {
@@ -567,6 +640,7 @@ namespace Prog4 {
 	}
 
 	Module::Module() {
+		level_of_energy = 0;
 		R = 5;
 		mtype = 0;
 		level_energy_supply = 100;
@@ -576,6 +650,7 @@ namespace Prog4 {
 	}
 
 	Module::Module(int les, int lec, bool p, int n, int r) {
+		level_of_energy = 0;
 		R = r;
 		mtype = 0;
 		level_energy_supply = les;
@@ -626,12 +701,20 @@ namespace Prog4 {
 		Module* mod = nullptr;
 		Network* net = nullptr;
 		for (int i = 0; i < P.platforms.size(); i++) {
-			pl = dynamic_cast<Platform*>(S.field[P.platforms[i].x][P.platforms[i].y]);
+			pl = dynamic_cast<Platform*>(S.field[P.platforms[i]->C.x][P.platforms[i]->C.y]);
 			for (int j = 0; j < pl->mods.size(); j++) {
 				if (pl->mods[j]->get_mtype() == 1 && pl->mods[j]->get_R() >= R) {
-					set_Connection(P.C, { P.platforms[i].x , P.platforms[i].y });
-					all.push_back(pl);
-					active.push_back(pl);
+					int ind = 0;
+					for (int r = 0; r < active.size(); r++) {
+						if (active[r]->C.x == pl->C.x && active[r]->C.y == pl->C.y) {
+							ind++;
+						}
+					}
+					if (ind == 0) {
+						set_Connection(P.C, { P.platforms[i]->C.x , P.platforms[i]->C.y });
+						all.push_back(pl);
+						active.push_back(pl);
+					}
 				}
 			}
 		}
@@ -667,20 +750,28 @@ namespace Prog4 {
 	}
 
 	void Network::ask_Partners(Cordinate c, Space &S, Platform &P) {
-		Static_Platform* platform = nullptr;
+		Platform* platform = nullptr;
 		Module* module = nullptr;
 		Network* network_module = nullptr;
 		if (S.field[c.x][c.y]->get_type() == 2) {
 			Cell* cell = S.field[c.x][c.y];
-			platform = dynamic_cast<Static_Platform*>(cell);
+			platform = dynamic_cast<Platform*>(cell);
 			for (int j = 0; j < platform->mods.size(); j++) {
 				if (platform->mods[j]->get_mtype() == 1 && platform->mods[j]->get_R() >= R) {
 					network_module = dynamic_cast<Network*>(platform->mods[j]);
 					for (int q = 0; q < network_module->give_Partners().size(); q++) {
-						set_Connection(P.C, { P.platforms[q].x , P.platforms[q].y });
-						if (network_module->give_Partners()[q]->get_Cordinate != P.get_Cordinate()) {
-							all.push_back(network_module->give_Partners()[q]);
-							active.push_back(network_module->give_Partners()[q]);
+						if (network_module->give_Partners()[q]->get_Cordinate().x != P.get_Cordinate().x || network_module->give_Partners()[q]->get_Cordinate().y != P.get_Cordinate().y) {
+							int ind = 0;
+							for (int r = 0; r < active.size(); r++) {
+								if (active[r]->C.x == network_module->give_Partners()[q]->C.x && active[r]->C.y == network_module->give_Partners()[q]->C.y) {
+									ind++;
+								}
+							}
+							if (ind == 0) {
+								all.push_back(network_module->give_Partners()[q]);
+								active.push_back(network_module->give_Partners()[q]);
+								set_Connection(P.C, { P.platforms[q]->C.x , P.platforms[q]->C.y });
+							}
 						}
 					}
 				}
@@ -690,13 +781,60 @@ namespace Prog4 {
 
 	void Network::take_info(Platform &P) {
 		for (int i = 0; i < active.size(); i++) {
-			for (int j = 0; j < active[i]->barriers.size(); j++)
-				P.barriers.push_back(active[i]->barriers[j]);
-			for (int j = 0; j < active[i]->platforms.size(); j++)
-				P.platforms.push_back(active[i]->platforms[j]);
-			for (int j = 0; j < active[i]->enemies.size(); j++)
-				P.enemies.push_back(active[i]->enemies[j]);
+			for (int j = 0; j < active[i]->barriers.size(); j++) {
+				int ind = 0;
+				for (int q = 0; q < P.barriers.size(); q++) {
+					if (P.barriers[q].x == active[i]->barriers[j].x && P.barriers[q].y == active[i]->barriers[j].y)
+						ind++;
+				}
+				if (ind == 0) {
+					P.barriers.push_back(active[i]->barriers[j]);
+				}
+			}
+			for (int j = 0; j < active[i]->platforms.size(); j++) {
+				int ind = 0;
+				for (int q = 0; q < P.platforms.size(); q++) {
+					if (P.platforms[q]->C.x == active[i]->platforms[j]->C.x && P.platforms[q]->C.y == active[i]->platforms[j]->C.y)
+						ind++;
+				}
+				if (ind == 0) {
+					P.platforms.push_back(active[i]->platforms[j]);
+				}
+			}
+			for (int j = 0; j < active[i]->enemies.size(); j++) {
+				int ind = 0;
+				for (int q = 0; q < P.enemies.size(); q++) {
+					if (P.enemies[q].x == active[i]->enemies[j].x && P.enemies[q].y == active[i]->enemies[j].y)
+						ind++;
+				}
+				if (ind == 0) {
+					P.enemies.push_back(active[i]->enemies[j]);
+				}
+			}
 		}
+	}
+
+	std::vector<Cordinate> Network::get_active_cordinates() {
+		std::vector<Cordinate> Cord;
+		for (int i = 0; i < active.size(); i++) {
+			Cord.push_back(active[i]->C);
+		}
+		return Cord;
+	}
+
+	int Network::return_max_able_stp(Platform P, Cordinate& c_stp) {
+		int max = -1;
+		for (int i = 0; i < active.size(); i++) {
+			int t = active[i]->return_module(1, 0)->get_R() - sqrt((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y));
+			int t1 = R - sqrt((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y));
+			if (t > t1)
+				t = t1;
+			if (active[i]->return_module(1, 0)->get_R() - ((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y)) > max) {
+				max = t;
+				c_stp = active[i]->C;
+			}
+		}
+		return max;
 	}
 
 	Sensor::Sensor() :Module(100, 1, true, 1, 5) {
@@ -722,7 +860,8 @@ namespace Prog4 {
 							P.barriers.push_back(S.field[P.C.x - R + i][P.C.y - R + j]->get_Cordinate());
 						}
 						if (S.field[P.C.x - R + i][P.C.y - R + j]->get_type() == 2) {
-							P.platforms.push_back(S.field[P.C.x - R + i][P.C.y - R + j]->get_Cordinate());
+							Platform* plat = dynamic_cast<Platform*>(S.field[P.C.x - R + i][P.C.y - R + j]);
+							P.platforms.push_back(plat);
 						}
 						if (S.field[P.C.x - R + i][P.C.y - R + j]->get_type() == 3) {
 							P.enemies.push_back(S.field[P.C.x - R + i][P.C.y - R + j]->get_Cordinate());
@@ -743,11 +882,11 @@ namespace Prog4 {
 		mtype = 3;
 	}
 
-	void Weapon::Kill(Platform& p, Space &S) {
+	int Weapon::Kill(Platform& p, Space &S) {
 		Cordinate c;
 		if (!power) {
 			std::cout << "Weapon off" << std::endl;
-			return;
+			return 0;
 		}
 		for (int i = 0; i < p.enemies.size(); i++) {
 			c = p.enemies[i];
@@ -760,8 +899,12 @@ namespace Prog4 {
 					break;
 				}
 			}
+			else {
+				std::cout << "No enemies within range" << std::endl;
+				return 0;
+			}
 		}
-		std::cout << "No enemies within range" << std::endl;
+		return 1;
 	}
 
 }

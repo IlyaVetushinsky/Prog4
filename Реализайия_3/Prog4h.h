@@ -72,18 +72,22 @@ namespace Prog4{
 		//Module** mods;
 		std::vector < Cordinate> enemies; //sensor
 		std::vector < Cordinate> barriers; //sensor
-		std::vector < Cordinate> platforms; //sensor
+		std::vector < Platform*> platforms; //sensor
 		friend Space;
 		friend Network;
 		friend Sensor;
 		friend Weapon;
 	public:
+		int find_stp_in_active();
+		int get_les() { return p_level_energy_supply; }
 		virtual int get_pltype() { return pltype; }
 		virtual Cordinate get_module_is(int mt, int les, int lec, int n, int nms, int r);
 		virtual int get_network_is();
 		virtual Module* return_module(int i) { return mods[i]; }
+		virtual Module* return_module(int mt, int);
 		//void change_discription(char*);
 		virtual void put_objects_info();
+		Cordinate get_enemy_is();
 		Platform();
 		Platform(Cordinate, int les, int ns);
 		virtual int add_module(int mt, int les, int lec, bool p, int n, int nms, int r);
@@ -91,9 +95,13 @@ namespace Prog4{
 		virtual ~Platform() { ; }
 	};
 	class Enemy : public Cell {  // type == 3
+		int n;//номер следующей команды по порядку
+		int V;
 	public:
 		Enemy();
-		Enemy(Cordinate c);
+		Enemy(Cordinate c, int v);
+		int return_V() { return V; }
+		void move_alg (Space& S);
 		Enemy* move(int k, Space& S);
 		void destruction();
 		friend Space;
@@ -107,11 +115,14 @@ namespace Prog4{
 	};
 	class Mobile_Platform : public Platform {  // pltype == 2
 	private:
+		int n;//параметр перемещения
 		int V;
 	public:
 		Mobile_Platform();
 		Mobile_Platform(Cordinate c, int les, int ns, int v);
-		Mobile_Platform* Move(int k, Space&);
+		int get_V() { return V; }
+		void go_to(Cordinate, Space&);
+		int Move(int k, Space&);
 		~Mobile_Platform();
 		friend Space;
 	};
@@ -122,12 +133,16 @@ namespace Prog4{
 		int mtype; 
 		int level_energy_supply;
 		int level_energy_cons;
+		int level_of_energy;
 		bool power;
 		int n_slots_take;
 		void Power_on() { power = true; }
 		void Power_off() { power = false; }
 	public:
 		Module();
+		void spend_energy(int e) { level_of_energy -= e; }
+		virtual int get_level_energy() { return level_of_energy; }
+		void get_energy(int e) { level_of_energy += e; }
 		virtual int get_mtype() { return mtype; }
 		virtual int get_n_slots_take() {return n_slots_take; }
 		virtual int get_level_energy_supply() { return level_energy_supply; }
@@ -148,7 +163,11 @@ namespace Prog4{
 	public:
 		Network();
 		Network(int les, int lec, bool p, int n, int nms, int r, int i);
+		int return_max_able_stp(Platform P, Cordinate&);
 		int get_n_max_session() { return n_max_session; }
+		int get_sessions() { return session; }
+		void add_session(int s) { session += s; }
+		void dic_session(int s) { session -= s; }
 		void get_Partners(Space&, Platform&);
 		void put_all_Partners();
 		void put_active_Partners();
@@ -157,6 +176,7 @@ namespace Prog4{
 		void set_Connection(Cordinate, Cordinate);
 		void ask_Partners(Cordinate, Space&, Platform&);
 		void take_info(Platform&);
+		std::vector<Cordinate> get_active_cordinates();
 		~Network() { ; }
 		friend Space;
 	};
@@ -175,7 +195,7 @@ namespace Prog4{
 	public:
 		Weapon();
 		Weapon(int, int les, int lec, bool p, int n, int r, int i);
-		void Kill(Platform&, Space&);
+		int Kill(Platform&, Space&);
 		void inCharge() { Power_off(); }
 		void outCharge() { Power_on(); }
 		friend Space;
