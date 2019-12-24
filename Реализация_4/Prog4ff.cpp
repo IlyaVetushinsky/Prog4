@@ -1,6 +1,6 @@
 #include <iostream>
 #include "..\..\Prog4\Prog4\Prog4h.h"
-namespace Prog4 {
+namespace Prog44 {
 
 	const char* msgs1[] = { "0. Quit", "1. Add object", "2. Reset size", "3. Select object", "4. Print"};
 	const int NMsgs1 = sizeof(msgs1) / sizeof(msgs1[0]);
@@ -697,25 +697,32 @@ namespace Prog4 {
 
 	void Network::get_Partners(Space &S, Platform &P) {
 		active.clear();
-		Platform* pl = nullptr;
 		Module* mod = nullptr;
 		Network* net = nullptr;
-		for (int i = 0; i < P.platforms.size(); i++) {
-			pl = dynamic_cast<Platform*>(S.field[P.platforms[i]->C.x][P.platforms[i]->C.y]);
-			for (int j = 0; j < pl->mods.size(); j++) {
-				if (pl->mods[j]->get_mtype() == 1 && pl->mods[j]->get_R() >= R) {
-					int ind = 0;
-					for (int r = 0; r < active.size(); r++) {
-						if (active[r]->C.x == pl->C.x && active[r]->C.y == pl->C.y) {
-							ind++;
+		for (int i = 0; i < 2 * R; i++) {
+			for (int j = 0; j < 2 * R; j++) {
+				if (P.C.x - R + i >= 0 && P.C.y - R + j >= 0 && P.C.x - R + i < S.get_Size().x && P.C.y - R + j < S.get_Size().y)
+					if (((((P.C.x - R + i) - P.C.x) * ((P.C.x - R + i) - P.C.x) + ((P.C.y - R + j) - P.C.y) * ((P.C.y - R + j) - P.C.y)) <= (R + Sq) * (R + Sq)) && (P.C.x - R + i != P.C.x || P.C.y - R + j != P.C.y)) {
+						if (S.field[P.C.x - R + i][P.C.y - R + j]->get_type() == 2) {
+							Platform* pl = dynamic_cast<Platform*>(S.field[P.C.x - R + i][P.C.y - R + j]);
+							for (int j = 0; j < pl->mods.size(); j++) {
+								if (pl->mods[j]->get_mtype() == 1 && pl->mods[j]->get_R() >= R) {
+									int ind = 0;
+									for (int r = 0; r < active.size(); r++) {
+										if (active[r]->C.x == pl->C.x && active[r]->C.y == pl->C.y) {
+											ind++;
+										}
+									}
+									if (ind == 0) {
+										set_Connection(P.C, { pl->C.x , pl->C.y });
+										all.push_back(pl);
+										active.push_back(pl);
+										P.platforms.push_back(pl);
+									}
+								}
+							}
 						}
 					}
-					if (ind == 0) {
-						set_Connection(P.C, { P.platforms[i]->C.x , P.platforms[i]->C.y });
-						all.push_back(pl);
-						active.push_back(pl);
-					}
-				}
 			}
 		}
 		//for (int i = 0; i < 2 * R; i++) {
@@ -794,7 +801,7 @@ namespace Prog4 {
 			for (int j = 0; j < active[i]->platforms.size(); j++) {
 				int ind = 0;
 				for (int q = 0; q < P.platforms.size(); q++) {
-					if (P.platforms[q]->C.x == active[i]->platforms[j]->C.x && P.platforms[q]->C.y == active[i]->platforms[j]->C.y)
+					if (P.platforms[q]->C.x == active[i]->platforms[j]->C.x && P.platforms[q]->C.y == active[i]->platforms[j]->C.y || P.C.x == active[i]->platforms[j]->C.x && P.C.y == active[i]->platforms[j]->C.y)
 						ind++;
 				}
 				if (ind == 0) {
@@ -829,7 +836,7 @@ namespace Prog4 {
 			int t1 = R - sqrt((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y));
 			if (t > t1)
 				t = t1;
-			if (active[i]->return_module(1, 0)->get_R() - ((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y)) > max) {
+			if (active[i]->return_module(1, 0)->get_R() - sqrt((P.C.x - active[i]->C.x) * (P.C.x - active[i]->C.x) + (P.C.y - active[i]->C.y) * (P.C.y - active[i]->C.y)) > max) {
 				max = t;
 				c_stp = active[i]->C;
 			}

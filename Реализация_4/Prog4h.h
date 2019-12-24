@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #pragma warning(disable : 4996)
-namespace Prog4{
+namespace Prog44{
 	const double Sq = 0.708;
 	struct Cordinate {
 		int x;
